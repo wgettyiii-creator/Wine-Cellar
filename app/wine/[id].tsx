@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, SafeAreaView, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, SafeAreaView, ActivityIndicator, Platform } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -28,6 +29,22 @@ export default function WineDetailScreen() {
     if (newQty < 0) return;
     setWine((w) => w ? { ...w, quantity: newQty } : w);
     await supabase.from('cellar_wines').update({ quantity: newQty }).eq('id', id);
+  }
+
+  async function handleDrinkOne() {
+    if (!wine || wine.quantity <= 0) return;
+    const newQty = wine.quantity - 1;
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    await handleQuantityChange(newQty);
+    if (newQty === 0) {
+      Alert.alert('Last Bottle Gone', `You've finished your last bottle of ${wine.name}. Remove it from your cellar?`, [
+        { text: 'Keep Entry', style: 'cancel' },
+        { text: 'Remove', style: 'destructive', onPress: async () => {
+          await supabase.from('cellar_wines').delete().eq('id', id);
+          router.back();
+        }},
+      ]);
+    }
   }
 
   async function handleDelete() {
@@ -79,6 +96,14 @@ export default function WineDetailScreen() {
             {wine.country && <Text style={styles.metaChip}>{wine.country}</Text>}
           </View>
         </View>
+
+        {/* Drink a bottle */}
+        {wine.quantity > 0 && (
+          <TouchableOpacity style={styles.drinkBtn} onPress={handleDrinkOne} activeOpacity={0.8}>
+            <Text style={styles.drinkBtnText}>🍷  Drink a Bottle</Text>
+            <Text style={styles.drinkBtnSub}>{wine.quantity} remaining</Text>
+          </TouchableOpacity>
+        )}
 
         {/* Quantity & price row */}
         <View style={styles.card}>
@@ -146,6 +171,9 @@ const styles = StyleSheet.create({
   producer: { color: Colors.textSecondary, fontSize: 16, marginBottom: 12 },
   metaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   metaChip: { backgroundColor: Colors.surface, color: Colors.textSecondary, fontSize: 13, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, borderWidth: 1, borderColor: Colors.border },
+  drinkBtn: { marginHorizontal: 16, marginBottom: 12, backgroundColor: Colors.primary, borderRadius: 14, paddingVertical: 16, alignItems: 'center' },
+  drinkBtnText: { color: Colors.background, fontSize: 17, fontWeight: '700' },
+  drinkBtnSub: { color: Colors.background, fontSize: 12, opacity: 0.75, marginTop: 2 },
   card: { marginHorizontal: 16, marginBottom: 12, backgroundColor: Colors.surface, borderRadius: 14, padding: 16, borderWidth: 1, borderColor: Colors.border },
   cardRow: { flexDirection: 'row', justifyContent: 'space-around' },
   cardItem: { alignItems: 'center' },

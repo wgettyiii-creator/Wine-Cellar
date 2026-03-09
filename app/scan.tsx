@@ -4,6 +4,7 @@ import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { analyzeWineLabel } from '../lib/claude';
+import { setPendingPhoto } from '../lib/photoStore';
 import { Colors } from '../constants/Colors';
 
 export default function ScanScreen() {
@@ -40,6 +41,7 @@ export default function ScanScreen() {
       if (!photo.base64) throw new Error('No base64 data from camera');
 
       const analysis = await analyzeWineLabel(photo.base64);
+      setPendingPhoto(photo.base64);
 
       const dest = mode === 'dining' ? '/add-dining' : '/add-wine';
       router.replace({

@@ -7,6 +7,12 @@ const config: ExpoConfig = {
   orientation: 'portrait',
   userInterfaceStyle: 'dark',
   scheme: 'wine-cellar',
+  icon: './assets/icon.png',
+  splash: {
+    image: './assets/splash.png',
+    resizeMode: 'cover',
+    backgroundColor: '#1a1a2e',
+  },
   ios: {
     supportsTablet: false,
     bundleIdentifier: 'com.williamgetty.winecellar',

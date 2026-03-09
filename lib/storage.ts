@@ -1,10 +1,11 @@
 import { supabase } from './supabase';
+import { takePendingPhoto } from './photoStore';
 
-export async function uploadWinePhoto(uri: string, userId: string): Promise<string> {
-  const { readAsStringAsync } = await import('expo-file-system/legacy');
-  const base64 = await readAsStringAsync(uri, { encoding: 'base64' });
+export async function uploadWinePhoto(userId: string): Promise<string | null> {
+  const base64 = takePendingPhoto();
+  if (!base64) return null;
+
   const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
-
   const fileName = `${userId}/${Date.now()}.jpg`;
 
   const { data, error } = await supabase.storage

@@ -16,7 +16,8 @@ import StarRating from '../components/StarRating';
 export default function AddDiningScreen() {
   const router = useRouter();
   const { photoUri, wineData } = useLocalSearchParams<{ photoUri: string; wineData: string }>();
-  const analysis: WineAnalysis = JSON.parse(wineData ?? '{}');
+  let analysis: WineAnalysis = {} as WineAnalysis;
+  try { analysis = JSON.parse(wineData ?? '{}'); } catch { /* stale/corrupt params */ }
 
   const [form, setForm] = useState({
     name: analysis.name ?? '',
@@ -63,8 +64,7 @@ export default function AddDiningScreen() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      let photo_url: string | null = null;
-      if (photoUri) photo_url = await uploadWinePhoto(photoUri, user.id);
+      const photo_url = await uploadWinePhoto(user.id);
 
       const { error } = await supabase.from('dining_wines').insert({
         user_id: user.id,

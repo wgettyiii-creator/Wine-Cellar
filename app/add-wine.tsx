@@ -16,7 +16,8 @@ import DrinkWindow from '../components/DrinkWindow';
 export default function AddWineScreen() {
   const router = useRouter();
   const { photoUri, wineData } = useLocalSearchParams<{ photoUri: string; wineData: string }>();
-  const analysis: WineAnalysis = JSON.parse(wineData ?? '{}');
+  let analysis: WineAnalysis = {} as WineAnalysis;
+  try { analysis = JSON.parse(wineData ?? '{}'); } catch { /* stale/corrupt params */ }
 
   const [form, setForm] = useState({
     name: analysis.name ?? '',
@@ -40,6 +41,30 @@ export default function AddWineScreen() {
     setForm((f) => ({ ...f, [key]: value }));
   }
 
+  async function saveNew(user: { id: string }) {
+    const photo_url = await uploadWinePhoto(user.id);
+
+    const { error } = await supabase.from('cellar_wines').insert({
+      user_id: user.id,
+      photo_url,
+      name: form.name.trim(),
+      producer: form.producer.trim() || null,
+      vintage: form.vintage ? parseInt(form.vintage) : null,
+      region: form.region.trim() || null,
+      country: form.country.trim() || null,
+      varietal: form.varietal.trim() || null,
+      quantity: parseInt(form.quantity) || 1,
+      price_paid: form.price_paid ? parseFloat(form.price_paid) : null,
+      rating: form.rating || null,
+      tasting_notes: form.tasting_notes.trim() || null,
+      drink_from: form.drink_from ? parseInt(form.drink_from) : null,
+      drink_peak_from: form.drink_peak_from ? parseInt(form.drink_peak_from) : null,
+      drink_peak_to: form.drink_peak_to ? parseInt(form.drink_peak_to) : null,
+      drink_to: form.drink_to ? parseInt(form.drink_to) : null,
+    });
+    if (error) throw error;
+  }
+
   async function handleSave() {
     if (!form.name.trim()) { Alert.alert('Required', 'Wine name is required'); return; }
     setSaving(true);
@@ -47,29 +72,62 @@ export default function AddWineScreen() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      let photo_url: string | null = null;
-      if (photoUri) photo_url = await uploadWinePhoto(photoUri, user.id);
+      // Fetch all user wines and fuzzy-match client-side so edits/scan variations still match
+      const { data: allWines } = await supabase
+        .from('cellar_wines')
+        .select('id, name, vintage, producer, quantity')
+        .eq('user_id', user.id);
 
-      const { error } = await supabase.from('cellar_wines').insert({
-        user_id: user.id,
-        photo_url,
-        name: form.name.trim(),
-        producer: form.producer.trim() || null,
-        vintage: form.vintage ? parseInt(form.vintage) : null,
-        region: form.region.trim() || null,
-        country: form.country.trim() || null,
-        varietal: form.varietal.trim() || null,
-        quantity: parseInt(form.quantity) || 1,
-        price_paid: form.price_paid ? parseFloat(form.price_paid) : null,
-        rating: form.rating || null,
-        tasting_notes: form.tasting_notes.trim() || null,
-        drink_from: form.drink_from ? parseInt(form.drink_from) : null,
-        drink_peak_from: form.drink_peak_from ? parseInt(form.drink_peak_from) : null,
-        drink_peak_to: form.drink_peak_to ? parseInt(form.drink_peak_to) : null,
-        drink_to: form.drink_to ? parseInt(form.drink_to) : null,
+      const enteredName = form.name.trim().toLowerCase();
+      const enteredVintage = form.vintage ? parseInt(form.vintage) : null;
+      const matches = (allWines ?? []).filter((w) => {
+        const wName = w.name.toLowerCase();
+        const nameMatch = wName === enteredName || wName.includes(enteredName) || enteredName.includes(wName);
+        const vintageMatch = !enteredVintage || !w.vintage || enteredVintage === w.vintage;
+        return nameMatch && vintageMatch;
       });
 
-      if (error) throw error;
+      if (matches.length > 0) {
+        const existing = matches[0];
+        const addQty = parseInt(form.quantity) || 1;
+        const label = existing.vintage ? `${existing.name} (${existing.vintage})` : existing.name;
+        setSaving(false);
+        Alert.alert(
+          'Wine Already in Cellar',
+          `"${label}" is already in your cellar with ${existing.quantity} bottle${existing.quantity !== 1 ? 's' : ''}. Add ${addQty} more to that entry, or create a separate entry?`,
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Add to Existing',
+              onPress: async () => {
+                setSaving(true);
+                const { error } = await supabase
+                  .from('cellar_wines')
+                  .update({ quantity: existing.quantity + addQty })
+                  .eq('id', existing.id);
+                if (error) { setSaving(false); Alert.alert('Failed', String(error)); return; }
+                router.replace('/(tabs)/cellar');
+              },
+            },
+            {
+              text: 'New Entry',
+              onPress: async () => {
+                setSaving(true);
+                try {
+                  await saveNew(user);
+                  router.replace('/(tabs)/cellar');
+                } catch (err) {
+                  setSaving(false);
+                  Alert.alert('Save Failed', String(err));
+                }
+              },
+            },
+          ]
+        );
+        return;
+      }
+
+      await saveNew(user);
       router.replace('/(tabs)/cellar');
     } catch (err) {
       setSaving(false);
