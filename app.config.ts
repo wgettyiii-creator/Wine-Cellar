@@ -18,6 +18,7 @@ const config: ExpoConfig = {
   },
   plugins: [
     'expo-router',
+    'expo-font',
     [
       'expo-camera',
       { cameraPermission: 'Wine Cellar needs your camera to scan wine labels.' },

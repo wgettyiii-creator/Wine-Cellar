@@ -35,10 +35,11 @@ export default function ScanScreen() {
     if (!cameraRef.current || analyzing) return;
     setAnalyzing(true);
     try {
-      const photo = await cameraRef.current.takePictureAsync({ quality: 0.85, base64: false });
+      const photo = await cameraRef.current.takePictureAsync({ quality: 0.85, base64: true });
       if (!photo) throw new Error('No photo captured');
+      if (!photo.base64) throw new Error('No base64 data from camera');
 
-      const analysis = await analyzeWineLabel(photo.uri);
+      const analysis = await analyzeWineLabel(photo.base64);
 
       const dest = mode === 'dining' ? '/add-dining' : '/add-wine';
       router.replace({
@@ -47,7 +48,7 @@ export default function ScanScreen() {
       });
     } catch (err) {
       setAnalyzing(false);
-      Alert.alert('Scan Failed', 'Could not analyze the label. Try again with better lighting.', [
+      Alert.alert('Scan Failed', err instanceof Error ? err.message : 'Unknown error', [
         { text: 'Try Again' },
         { text: 'Cancel', onPress: () => router.back() },
       ]);

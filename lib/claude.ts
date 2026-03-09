@@ -1,12 +1,8 @@
-import * as FileSystem from 'expo-file-system';
 import { WineAnalysis } from './types';
 
 const API_KEY = process.env.EXPO_PUBLIC_ANTHROPIC_API_KEY!;
 
-export async function analyzeWineLabel(imageUri: string): Promise<WineAnalysis> {
-  const base64 = await FileSystem.readAsStringAsync(imageUri, {
-    encoding: FileSystem.EncodingType.Base64,
-  });
+export async function analyzeWineLabel(base64: string): Promise<WineAnalysis> {
 
   const response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',

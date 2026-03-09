@@ -3,21 +3,24 @@ import { useEffect } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
-import { useAuth } from '../lib/auth';
+import { AuthProvider, useAuth } from '../lib/auth';
 import { Colors } from '../constants/Colors';
 
 SplashScreen.preventAutoHideAsync();
 
-export default function RootLayout() {
+function RootLayoutNav() {
   const { user, loading } = useAuth();
   const segments = useSegments();
   const router = useRouter();
 
   useEffect(() => {
+    if (!loading) SplashScreen.hideAsync();
+  }, [loading]);
+
+  // Handle mid-session auth changes (logout, login).
+  // Initial routing is handled by app/index.tsx via <Redirect>.
+  useEffect(() => {
     if (loading) return;
-
-    SplashScreen.hideAsync();
-
     const inAuth = segments[0] === '(auth)';
     if (!user && !inAuth) {
       router.replace('/(auth)/login');
@@ -40,5 +43,13 @@ export default function RootLayout() {
         <Stack.Screen name="dining-detail/[id]" options={{ animation: 'slide_from_right' }} />
       </Stack>
     </>
+  );
+}
+
+export default function RootLayout() {
+  return (
+    <AuthProvider>
+      <RootLayoutNav />
+    </AuthProvider>
   );
 }
