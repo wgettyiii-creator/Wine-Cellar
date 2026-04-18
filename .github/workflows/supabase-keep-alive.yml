@@ -12,7 +12,7 @@ jobs:
       - name: Ping Supabase
         run: |
           STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-            "https://ileauttjsshfrihianpt.supabase.co/rest/v1/?apikey=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlsZWF1dHRqc3NoZnJpaGlhbnB0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4ODc4NzgsImV4cCI6MjA4ODQ2Mzg3OH0.xrvewF818EVTH3sye3SV-PktY1lIOT6pVbDIyZrOcCY")
+            "https://ileauttjsshfrihianpt.supabase.co/rest/v1/?apikey=sb_secret_UwVXZL_9LmkSy86J9wshJg_NoEn9NXC
           echo "Response status: $STATUS"
           if [ "$STATUS" -ge 200 ] && [ "$STATUS" -lt 300 ]; then
             echo "Supabase is alive!"
