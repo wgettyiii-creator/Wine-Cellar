@@ -2,8 +2,8 @@ name: Supabase Keep-Alive
 
 on:
   schedule:
-    - cron: '0 12 */5 * *'  # Every 5 days at noon UTC
-  workflow_dispatch:         # Allow manual trigger from GitHub UI
+    - cron: '0 12 */5 * *'
+  workflow_dispatch:
 
 jobs:
   ping:
@@ -12,13 +12,11 @@ jobs:
       - name: Ping Supabase
         run: |
           STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-            "https://ileauttjsshfrihianpt.supabase.co/rest/v1/" \
-            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
-            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}")
+            "https://ileauttjsshfrihianpt.supabase.co/rest/v1/?apikey=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlsZWF1dHRqc3NoZnJpaGlhbnB0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4ODc4NzgsImV4cCI6MjA4ODQ2Mzg3OH0.xrvewF818EVTH3sye3SV-PktY1lIOT6pVbDIyZrOcCY")
           echo "Response status: $STATUS"
           if [ "$STATUS" -ge 200 ] && [ "$STATUS" -lt 300 ]; then
-            echo "Supabase is alive."
+            echo "Supabase is alive!"
           else
-            echo "Unexpected status $STATUS — project may be paused or key is wrong."
+            echo "Failed with status $STATUS"
             exit 1
           fi
