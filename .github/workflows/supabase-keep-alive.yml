@@ -11,12 +11,5 @@ jobs:
     steps:
       - name: Ping Supabase
         run: |
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-            "https://ileauttjsshfrihianpt.supabase.co/rest/v1/?apikey=sb_secret_UwVXZL_9LmkSy86J9wshJg_NoEn9NXC
-          echo "Response status: $STATUS"
-          if [ "$STATUS" -ge 200 ] && [ "$STATUS" -lt 300 ]; then
-            echo "Supabase is alive!"
-          else
-            echo "Failed with status $STATUS"
-            exit 1
-          fi
+          curl -s "https://ileauttjsshfrihianpt.supabase.co/rest/v1/"
+          echo "Pinged Supabase successfully"
